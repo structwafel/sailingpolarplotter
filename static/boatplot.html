@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Polar Diagram</title>
+</head>
+
+<body>
+    <h1> Create your Polar Diagram!</h1>
+
+    <h3> A little project, very much Work-In-Progress</h3>
+    <div>
+        <button onclick="ShowFirstPage()">Raw input</button>
+        <button onclick="ShowSecondPage()">Json/SailServer</button>
+
+    </div>
+    <div class="firstpage">
+        <div style="display: flex;">
+            <div>
+                <div> The expected data form is like so:</div>
+                <div> TWS 0 0 TWA BPS TWA BPS TWA BPS TWA BPS</div>
+                <div> TWS 0 0 TWA BPS TWA BPS TWA BPS TWA BPS</div>
+
+                <div> Where a new line seperates different TWS</div>
+            </div>
+            <div style="margin-left: 10px;">
+                <div> Example:</div>
+                <div>7 0 0 55 3 60 4 70 5 80 5 90 7 95 7 100 5.5 110 5.5 120 5 130 4.5 140 4.5 150 4 160 3.5 170 3.5
+                </div>
+                <div>10 0 0 55 6 60 6 70 7 80 7 90 8 95 8 100 8 110 8 120 7.5 130 6 140 5.5 150 5.5 160 5.5 170 5.5
+                </div>
+            </div>
+        </div>
+        <textarea name="data" rows="10" cols="100"></textarea>
+        <br>
+        Degree
+        <input id="degree" type="text" value="1" />
+        <br>
+        Smooth plot
+        <input id="smooth_plot" type="checkbox" name="smooth_plot" value="smooth_plot" />
+        <br>
+        Show Original points
+        <input id="original_points" type="checkbox" />
+        <br>
+        <select id="method" onchange="updateDegree()">
+            <option value="regression">Regresssion</option>
+            <option value="moving_average">Moving Average</option>
+        </select>
+        <br>
+        To Zero
+        <input id="to_zero" type="checkbox" />
+        <br>
+        Plot Name
+        <input id="plotname" type="text" name="name" value="name" />
+        <br>
+        <button onclick="submitForm()">Submit</button>
+        <img id="loadinggif" src="static/spinner.gif" width="20" height="20" style="display: none">
+        <br>
+        <div id="error_msg"></div>
+
+        <br>
+        <img id="plot" alt="Plot">
+
+        <script>
+            function submitForm() {
+                // get the data from the text area
+                var numbers = document.getElementsByName("data")[0].value;
+
+                var data = {
+                    data: numbers,
+                    config: {
+                        name: document.getElementById("plotname").value,
+                        smooth_plot: document.getElementById("smooth_plot").checked,
+                        original_points: document.getElementById("original_points").checked,
+                        degree: parseInt(document.getElementById("degree").value),
+                        to_zero: document.getElementById("to_zero").checked,
+                        method: document.getElementById("method").value
+                    }
+                }
+                // };
+                // data["data"] = numbers;
+                // data["name"] = document.getElementById("plotname").value;
+                // data["smooth_plot"] = document.getElementById("smooth_plot").checked;
+                // data["original_points"] = document.getElementById("original_points").checked;
+                // data["degree"] = parseInt(document.getElementById("degree").value);
+
+                // show the loading gif
+                document.getElementById("loadinggif").style.display = "inline";
+
+                // send the data to the server
+                fetch('/api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                }).then(blob => {
+                    // Create a URL from the blob
+                    var imgURL = URL.createObjectURL(blob);
+                    // Set the image source to the URL
+                    document.getElementById('plot').src = imgURL;
+                    document.getElementById("loadinggif").style.display = "none";
+                }).catch(error => {
+                    console.error('There was a problem with your fetch operation:', error);
+                    document.getElementById("jsonloadinggif").style.display = "none";
+                })
+            }
+        </script>
+    </div>
+    <div class="secondpage" style="display: none;">
+        <h1> Json/Sailserver</h1>
+        <form id="myForm2">
+            <input type="file" id="jsonFile" accept=".json" multiple />
+            <br>
+            <h5> Plot settings</h5>
+            Plot Name
+            <input id="jsonplotname" type="text" placeholder="boat Go FAST" value="" />
+            <br>
+            Degree/Window
+            <input id="jsondegree" type="text" value="1" />
+            <br>
+            Smooth plot
+            <input id="jsonsmooth_plot" type="checkbox" name="smooth_plot" value="smooth_plot" />
+            <br>
+            Show Original points
+            <input id="jsonoriginal_points" type="checkbox" />
+            <br>
+            <select id="jsonmethod" onchange="updateDegree('json')">
+                <option value="regression">Regresssion</option>
+                <option value="moving_average">Moving Average</option>
+            </select>
+
+            <br>
+            <h5> Filter settings</h5>
+            Min True Winds
+            <input id="jsonmin_true_winds" type="text" value="4" />
+            <br>
+            Max True Winds
+            <input id="jsonmax_true_winds" type="text" value="30" />
+            <br>
+            Even
+            <input id="jsoneven" type="checkbox" name="jsoneven" />
+            <br>
+            Uneven
+            <input id="jsonuneven" type="checkbox" name="jsonuneven" />
+            <br>
+            Min TWA
+            <input id="jsonmintwa" type="text" value="30" />
+            <br>
+            Min STW
+            <input id="jsonminstw" type="text" value="2" />
+            <br>
+            Excluded TWS
+            <input id="jsonexclude" type="text" placeholder="1,2,3" pattern="^\d+(,\d+)*,?$" />
+            <br>
+
+            <button>Submit</button>
+            <img id="jsonloadinggif" src="static/spinner.gif" width="20" height="20" style="display: none">
+            <br>
+            <div id="jsonerror_msg"></div>
+
+            <br>
+            <img id="jsonplot" alt="Plot">
+        </form>
+
+    </div>
+    <script>
+        function ShowFirstPage() {
+            document.querySelector(".firstpage").style.display = "block"
+            document.querySelector(".secondpage").style.display = "none"
+        }
+        function ShowSecondPage() {
+            document.querySelector(".firstpage").style.display = "none"
+            document.querySelector(".secondpage").style.display = "block"
+        }
+        document.getElementById('myForm2').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            var mintwa = Number(document.getElementById('jsonmintwa').value);
+            var minstw = Number(document.getElementById('jsonminstw').value);
+            var files = document.getElementById('jsonFile').files; // Get the files from the input
+            var allFilesData = []; // Array to hold data from all files
+            var filesProcessed = 0; // Counter for processed files
+
+
+
+
+            if (files.length > 0) {
+                Array.from(files).forEach(file => {
+                    if (file.type === "application/json") {
+                        var reader = new FileReader();
+
+
+                        reader.onload = function (e) {
+                            try {
+                                var jsonData = JSON.parse(e.target.result); // Parse the JSON data
+                                allFilesData.push(...jsonData); // Extend the array with each entry of jsonData
+                            } catch (error) {
+                                console.error("Error parsing JSON from file:", error);
+                                alert("Error parsing JSON from one of the files.");
+                            }
+
+                            filesProcessed++;
+                            // Check if all files have been processed
+                            if (filesProcessed === files.length) {
+                                // filter with minstw and mintwa, for ['stw'] and ['mintwa']
+                                console.log("amount of data points: ", allFilesData.length)
+                                const filteredData = allFilesData.filter(entry => Number(entry.stw) > minstw && Number(entry.twa) > mintwa);
+                                sendDataToServer(JSON.stringify(filteredData)); // Send the combined data as a string
+                            }
+                        };
+
+                        reader.readAsText(file);
+                    } else {
+                        alert("One of the selected files is not a JSON file.");
+                    }
+                });
+            } else {
+                alert("Please select at least one JSON file.");
+            }
+        });
+
+        function sendDataToServer(jsonString) {
+            var excludeString = document.getElementById("jsonexclude").value;
+
+
+            var excludeArray = excludeString.split(',')
+                .map(function (item) {
+                    return parseInt(item, 10);
+                })
+                .filter(function (item) {
+                    return !isNaN(item); // Keep only valid numbers
+                });
+            var config = {
+                name: document.getElementById("jsonplotname").value,
+                smooth_plot: document.getElementById("jsonsmooth_plot").checked,
+                original_points: document.getElementById("jsonoriginal_points").checked,
+                degree: parseInt(document.getElementById("jsondegree").value),
+                method: document.getElementById("jsonmethod").value,
+                min_true_winds: parseInt(document.getElementById("jsonmin_true_winds").value),
+                max_true_winds: parseInt(document.getElementById("jsonmax_true_winds").value),
+                even: document.getElementById("jsoneven").checked,
+                uneven: document.getElementById("jsonuneven").checked,
+                exclude: excludeArray,
+                smooth_plot: document.getElementById("jsonsmooth_plot").checked
+            }
+            // config['exclude'] = excludeArray ? len(excludeArray) > 0 : null
+            var data = {
+                data: jsonString,
+                config: config
+            }
+            // show the loading gif
+            document.getElementById("jsonloadinggif").style.display = "inline";
+
+            // send the data to the server
+            fetch('/jsonapi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            }).then(response => {
+                // First, check if the response is ok
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // Convert the response to a Blob
+                return response.blob();
+            }).then(blob => {
+                // Create a URL from the blob
+                var imgURL = URL.createObjectURL(blob);
+                // Set the image source to the URL
+                document.getElementById('jsonplot').src = imgURL;
+                document.getElementById("jsonloadinggif").style.display = "none";
+            }).catch(error => {
+                console.error('There was a problem with your fetch operation:', error);
+                document.getElementById("jsonloadinggif").style.display = "none";
+            });
+        }
+    </script>
+    <script>
+        var degrees = {
+            'regression': '1',
+            'moving_average': '2'
+        };
+
+        function updateDegree(json = "") {
+            var method = document.getElementById(json + 'method').value;
+            var degreeInput = document.getElementById(json + 'degree');
+
+            // Store the current degree value for the previous method
+            var previousMethod = degreeInput.getAttribute('data-method');
+            if (previousMethod) {
+                degrees[previousMethod] = degreeInput.value;
+            }
+
+            // Update the degree value for the selected method
+            degreeInput.value = degrees[method];
+
+            // Store the current method as the previous method
+            degreeInput.setAttribute('data-method', method);
+        }
+    </script>
+</body>
+
+
+</html>

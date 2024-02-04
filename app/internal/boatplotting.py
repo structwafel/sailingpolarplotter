@@ -1,61 +1,15 @@
-import io
-import json
-import signal
-from collections import defaultdict
-from typing import Any, Dict, List
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import plotly.express as px
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-from app.models import BoatPlotterConfig
+from app.models import BoatPlotterConfig, JsonBoatPlotterConfig
 
 
-def parse_data_to_df(raw_data: str, speed: str = "stw"):
-    raw_data_list: List[Dict[str, Any]] = json.loads(raw_data)
-    data = []
+def plot_tws_group_fits_polar(df, config: JsonBoatPlotterConfig):
+    fig, ax = plt.subplots(subplot_kw={"projection": "polar"}, figsize=(12, 8))
 
-    entry: Any
-    for entry in raw_data_list:
-        try:
-            if all(key in entry for key in ["tws", "twa", speed]):
-                data.append(
-                    {
-                        "tws": int(np.round(float(entry.get("tws")))),
-                        "twa": np.radians(float(entry.get("twa"))),
-                        speed: float(entry.get(speed)),
-                        # "sog": float(entry.get("sog")),
-                    }
-                )
-        except AttributeError as e:
-            print(e)
-            print(entry)
+    df_sorted = df.sort_values(by=["tws", "twa"])
 
-    return pd.DataFrame(data).sort_values("rad")
-
-
-def plot_tws_group_fits_polar(df, config: BoatPlotterConfig):
-    """
-    For each 'tws' group in the dataframe, fit a polynomial of specified degree
-    and plot the raw data points (optionally) and the polynomial fit line on a polar plot.
-
-    Parameters:
-    - df: pandas DataFrame with the data containing 'twa', 'stw', and 'tws'.
-    - degree: The degree of the polynomial fit.
-    - plot_scatter: Whether to plot the scatter plot of the raw data.
-    """
-
-    # Ensure DataFrame is sorted for plotting
-    df_sorted = df.sort_values(["tws", "twa"])
-
-    # Set up the polar plot
-    fig, ax = plt.subplots(subplot_kw={"projection": "polar"}, figsize=(10, 8))
-    # plt.figure(figsize=(10, 8))
-    # ax = plt.subplot(111, polar=True)
-
-    # Plot only for even 'tws' values
     for tws in df_sorted["tws"].unique():
         if config.even and tws % 2 != 0:
             continue
@@ -68,37 +22,52 @@ def plot_tws_group_fits_polar(df, config: BoatPlotterConfig):
 
         tws_df = df_sorted[df_sorted["tws"] == tws]
 
-        # Scatter plot of the raw data points
-        if config.original_points:
-            ax.scatter(
-                np.radians(tws_df["twa"]),
-                tws_df["stw"],
-                # label=f"Scatter TWS {tws}",
-            )
+        if not config.smooth_plot:
+            ax.plot(np.radians(tws_df["twa"]), tws_df["stw"], label=f"{tws}")
 
-        # TODO(lgx) switch statement for other fits
-        radius_fit, theta_fit = create_polynomial_fit(
-            tws_df["stw"],
-            tws_df["twa"],
-            config.degree,
-        )
+        else:
+            color = None
 
-        # Plot the polynomial fit line
-        ax.plot(
-            theta_fit,
-            radius_fit,
-            label=f"{tws}",
-        )
+            if config.original_points:
+                test = ax.plot(
+                    np.radians(tws_df["twa"]),
+                    tws_df["stw"],
+                    "o",
+                )
+                color = test[0].get_color()
+
+            switch = config.method
+            if switch == "regression":
+                radius_fit, theta_fit = create_polynomial_fit(
+                    tws_df["stw"], tws_df["twa"], config.degree
+                )
+            elif switch == "moving_average":
+                radius_fit, theta_fit = create_moving_average(
+                    tws_df["stw"], tws_df["twa"], config.degree
+                )
+            else:
+                raise ValueError("Invalid method")
+
+            if color:
+                ax.plot(theta_fit, radius_fit, label=f"{tws}", color=color)
+            else:
+                ax.plot(theta_fit, radius_fit, label=f"{tws}")
 
     # Plot customizations
     ax.set_theta_zero_location("N")
-    ax.set_theta_direction(-1)  # Clockwise
-    ax.set_thetamin(0)  # Set the start of the plot to 0 degrees
-    ax.set_thetamax(180)  # Set the end of the plot to 180 degrees
-    plt.legend(title="TWS (Kn)", loc="upper left", bbox_to_anchor=(1.05, 1))
-    plt.title(config.name)
+    ax.set_theta_direction(-1)
+    ax.set_thetamin(0)
+    ax.set_thetamax(180)
+    plt.legend(title="True Wind Speed (knots)", bbox_to_anchor=(1.2, 0.9), fontsize=12)
+    plt.title(config.name, y=1.1, fontsize=20)
 
     return fig
+
+
+def create_moving_average(radius, theta, window_size):
+    rolling_avg = radius.rolling(window=window_size, center=True).mean()
+
+    return rolling_avg, np.radians(theta)
 
 
 def create_polynomial_fit(radius, theta, degree):
@@ -112,56 +81,17 @@ def create_polynomial_fit(radius, theta, degree):
     return radius_fit, theta_fit
 
 
-def create_regression_line(df: pd.DataFrame, degree: int = 1) -> pd.DataFrame:
-    fig, ax = plt.subplots()
-    ax = ax.flatten()
-    slope, intercept = np.polyfit(df["twa"], df["stw"], degree)
-    df["stw"] = slope * df["twa"] + intercept
-    return df
-    ax.plot(
-        df["twa"],
-        slope * df["twa"] + intercept,
-        label="Linear Fit",
-    )
-    ax.set_title("Linear Regression")
-
-    # Convert plot to PNG image
-    pngImage = io.BytesIO()
-    FigureCanvas(fig).print_png(pngImage)
-
-
-def polynomial_fit(df, x_column, y_column, degree, pre_filter=None, post_filter=None):
-
-    # Apply pre-filtering if specified
-    if pre_filter:
-        for condition, value in pre_filter.items():
-            df = df.query(f"{condition} == @value")
-
-    # Perform the polynomial fit
-    coeffs = np.polyfit(df[x_column], df[y_column], degree)
-    polynomial = np.poly1d(coeffs)
-
-    # Create a range of x-values for the fitted polynomial
-    fitted_x = np.linspace(df[x_column].min(), df[x_column].max(), len(df) * 10)
-    fitted_y = polynomial(fitted_x)
-
-    # Convert fitted values to a DataFrame
-    fit_df = pd.DataFrame({x_column: fitted_x, y_column: fitted_y})
-
-    # Apply post-filtering if specified
-    if post_filter:
-        for condition, value in post_filter.items():
-            fit_df = fit_df.query(f"{condition} == @value")
-
-    return fit_df[x_column], fit_df[y_column]
-
-
 def create_polar_diagram(
-    data, plot_filename, plot_title, smooth_plot, original_points, degree
+    data,
+    config: BoatPlotterConfig,
 ):
-    # print("Creating polar diagram")
-    # return
-    _, ax = plt.subplots(figsize=(12, 8), subplot_kw={"polar": True})
+    plot_title = config.name
+    smooth_plot = config.smooth_plot
+    original_points = config.original_points
+    degree = config.degree
+    to_zero = config.to_zero
+
+    fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={"polar": True})
 
     # Plot settings
     ax.set_theta_zero_location("N")
@@ -169,8 +99,10 @@ def create_polar_diagram(
     ax.set_thetamin(0)
     ax.set_thetamax(180)
 
+    data = [[float(num) for num in line.split()] for line in data.strip().split("\n")]
+
     for row in data:
-        tws = row[0]
+        tws = int(row[0])
         angles = np.radians(row[1::2])
         speeds = row[2::2]
 
@@ -181,18 +113,37 @@ def create_polar_diagram(
             coeffs = np.polyfit(angles, speeds, degree)
             polynomial = np.poly1d(coeffs)
 
-            fitted_angles = np.linspace(min(angles[1:]), max(angles[1:]), 300)
-            fitted_speeds = polynomial(fitted_angles)
+            switch = config.method
+            # why enum, not even exauhstive
+            if switch == "regression":
+                if to_zero:
+                    fitted_angles = np.linspace(min(angles), max(angles), 300)
+                else:
+                    fitted_angles = np.linspace(min(angles[1:]), max(angles[1:]), 300)
+                fitted_speeds = polynomial(fitted_angles)
 
-            color = None
-            if original_points:
-                test = ax.plot(angles[1:], speeds[1:], "o")
-                color = test[0].get_color()
+                color = None
+                if original_points:
+                    test = ax.plot(angles[1:], speeds[1:], "o")
+                    color = test[0].get_color()
 
-            if color:
-                ax.plot(fitted_angles, fitted_speeds, label=f"{tws}", color=color)
-            else:
-                ax.plot(fitted_angles, fitted_speeds, label=f"{tws}")
+                if color:
+                    ax.plot(fitted_angles, fitted_speeds, label=f"{tws}", color=color)
+                else:
+                    ax.plot(fitted_angles, fitted_speeds, label=f"{tws}")
+            if switch == "moving_average":
+                color = None
+                if original_points:
+                    test = ax.plot(angles[1:], speeds[1:], "o")
+                    color = test[0].get_color()
+                rolling_avg = (
+                    pd.Series(speeds).rolling(window=degree, center=True).mean()
+                )
+
+                if color:
+                    ax.plot(angles, rolling_avg, label=f"{tws}", color=color)
+                else:
+                    ax.plot(angles, rolling_avg, label=f"{tws}")
 
     box = ax.get_position()
     ax.set_position([box.x0 - 0.1, box.y0, box.width, box.height])
@@ -200,5 +151,4 @@ def create_polar_diagram(
 
     plt.title(plot_title, y=1.1, fontsize=20)
 
-    plt.savefig(plot_filename)
-    return "Polar diagram created"
+    return fig

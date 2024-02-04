@@ -59,7 +59,7 @@
         <div id="error_msg"></div>
 
         <br>
-        <img id="plot" alt="Plot">
+        <img id="plot">
 
         <script>
             function submitForm() {
@@ -115,57 +115,61 @@
     <div class="secondpage" style="display: none;">
         <h1> Json/Sailserver</h1>
         <form id="myForm2">
-            <input type="file" id="jsonFile" accept=".json" multiple />
-            <br>
-            <h5> Plot settings</h5>
-            Plot Name
-            <input id="jsonplotname" type="text" placeholder="boat Go FAST" value="" />
-            <br>
-            Degree/Window
-            <input id="jsondegree" type="text" value="1" />
-            <br>
-            Smooth plot
-            <input id="jsonsmooth_plot" type="checkbox" name="smooth_plot" value="smooth_plot" />
-            <br>
-            Show Original points
-            <input id="jsonoriginal_points" type="checkbox" />
-            <br>
-            <select id="jsonmethod" onchange="updateDegree('json')">
-                <option value="regression">Regresssion</option>
-                <option value="moving_average">Moving Average</option>
-            </select>
-
-            <br>
-            <h5> Filter settings</h5>
-            Min True Winds
-            <input id="jsonmin_true_winds" type="text" value="4" />
-            <br>
-            Max True Winds
-            <input id="jsonmax_true_winds" type="text" value="30" />
-            <br>
-            Even
-            <input id="jsoneven" type="checkbox" name="jsoneven" />
-            <br>
-            Uneven
-            <input id="jsonuneven" type="checkbox" name="jsonuneven" />
-            <br>
-            Min TWA
-            <input id="jsonmintwa" type="text" value="30" />
-            <br>
-            Min STW
-            <input id="jsonminstw" type="text" value="2" />
-            <br>
-            Excluded TWS
-            <input id="jsonexclude" type="text" placeholder="1,2,3" pattern="^\d+(,\d+)*,?$" />
-            <br>
-
+            <div id="wrapper" style="display: flex;">
+                <div>
+                    <input type="file" id="jsonFile" accept=".json" multiple />
+                    <br>
+                    <h5> Plot settings</h5>
+                    Plot Name
+                    <input id="jsonplotname" type="text" placeholder="boat Go FAST" value="" />
+                    <br>
+                    Degree/Window
+                    <input id="jsondegree" type="text" value="1" />
+                    <br>
+                    Smooth plot
+                    <input id="jsonsmooth_plot" type="checkbox" name="smooth_plot" value="smooth_plot" />
+                    <br>
+                    Show Original points
+                    <input id="jsonoriginal_points" type="checkbox" />
+                    <br>
+                    <select id="jsonmethod" onchange="updateDegree('json')">
+                        <option value="regression">Regresssion</option>
+                        <option value="moving_average">Moving Average</option>
+                    </select>
+                </div>
+                <div style="margin-left: 20px;">
+                    <br>
+                    <h5> Filter settings</h5>
+                    Min True Winds
+                    <input id="jsonmin_true_winds" type="text" value="4" />
+                    <br>
+                    Max True Winds
+                    <input id="jsonmax_true_winds" type="text" value="30" />
+                    <br>
+                    Even
+                    <input id="jsoneven" type="checkbox" name="jsoneven" />
+                    <br>
+                    Uneven
+                    <input id="jsonuneven" type="checkbox" name="jsonuneven" />
+                    <br>
+                    Min TWA
+                    <input id="jsonmintwa" type="text" value="30" />
+                    <br>
+                    Min STW
+                    <input id="jsonminstw" type="text" value="2" />
+                    <br>
+                    Excluded TWS
+                    <input id="jsonexclude" type="text" placeholder="1,2,3" pattern="^\d+(,\d+)*,?$" />
+                    <br>
+                </div>
+            </div>
             <button>Submit</button>
             <img id="jsonloadinggif" src="static/spinner.gif" width="20" height="20" style="display: none">
             <br>
             <div id="jsonerror_msg"></div>
 
             <br>
-            <img id="jsonplot" alt="Plot">
+            <img id="jsonplot">
         </form>
 
     </div>

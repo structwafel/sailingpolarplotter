@@ -30,13 +30,15 @@ async def jsonapi(body: JsonInputData):
     raw_data = json.loads(body.data)
     data = []
     for entry in raw_data:
+        if not all(key in entry for key in ["tws", "twa", "stw"]):
+            continue
         try:
             data.append(
                 {
                     "tws": int(np.round(float(entry.get("tws")))),
                     "twa": float(entry.get("twa")),
                     "stw": float(entry.get("stw")),
-                    "sog": float(entry.get("sog")),
+                    # "sog": float(entry.get("sog")),
                 }
             )
         except AttributeError as e:

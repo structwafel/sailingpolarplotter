@@ -1,3 +1,5 @@
+from io import BytesIO
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -61,7 +63,12 @@ def plot_tws_group_fits_polar(df, config: JsonBoatPlotterConfig):
     plt.legend(title="True Wind Speed (knots)", bbox_to_anchor=(1.2, 0.9), fontsize=12)
     plt.title(config.name, y=1.1, fontsize=20)
 
-    return fig
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    plt.close(fig)
+    buf.seek(0)
+
+    return buf
 
 
 def create_moving_average(radius, theta, window_size):
@@ -151,4 +158,9 @@ def create_polar_diagram(
 
     plt.title(plot_title, y=1.1, fontsize=20)
 
-    return fig
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    plt.close(fig)
+    buf.seek(0)
+
+    return buf

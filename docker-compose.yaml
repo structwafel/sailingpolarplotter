@@ -1,14 +1,18 @@
-version: '3.8'
-
+version: "3.8"
 services:
-  web:
+  sailingpolar:
+    networks:
+      - proxy
     restart: unless-stopped
     build: .
     volumes:
       - ./src:/app
-    ports:
-      - "8888:8888"
+    # ports:
+    #   - "8888:8888"
     environment:
       - PYTHONUNBUFFERED=1
       - TESTENV=1
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8888
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8888 --workers 1
+networks:
+  proxy:
+    external: true

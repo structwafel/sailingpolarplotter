@@ -10,5 +10,10 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - TESTENV=1
-
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.<ghost-faidaipiu>.entrypoints=websecure"
+      - "traefik.http.routers.<ghost-faidaipiu>.tls.certResolver=letsencrypt"
+      - "traefik.http.routers.<ghost-faidaipiu>.rule=Host(`sailingpolar.lgxerxes.cloud`)"
+      - "traefik.http.services.<ghost-faidaipiu>.loadbalancer.server.port=2368"
 

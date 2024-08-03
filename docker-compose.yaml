@@ -13,6 +13,11 @@ services:
       - "traefik.http.routers.sailing-polar.tls.certResolver=letsencrypt"
       - "traefik.http.routers.sailing-polar.rule=Host(`sailingpolar.lgxerxes.cloud`)"
       - "traefik.http.services.sailing-polar.loadbalancer.server.port=8888"
+  
+      # HTTP router
+      - "traefik.http.routers.sailing-polar-http.entrypoints=web"
+      - "traefik.http.routers.sailing-polar-http.rule=Host(`sailingpolar.lgxerxes.cloud`)"
+      - "traefik.http.routers.sailing-polar-http.middlewares=redirect-to-https@file"
 
     # to work with dokploy
     networks:

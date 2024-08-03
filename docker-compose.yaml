@@ -1,12 +1,9 @@
-version: "3.8"
 services:
   sailingpolar:
     restart: unless-stopped
     build: .
-    volumes:
-      - ./src:/app
-    # ports:
-    #   - "8888:8888"
+    ports:
+      - "8888:8888"
     environment:
       - PYTHONUNBUFFERED=1
       - TESTENV=1

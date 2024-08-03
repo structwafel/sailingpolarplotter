@@ -9,8 +9,15 @@ services:
       - TESTENV=1
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.<sailing-polar>.entrypoints=websecure"
-      - "traefik.http.routers.<sailing-polar>.tls.certResolver=letsencrypt"
-      - "traefik.http.routers.<sailing-polar>.rule=Host(`sailingpolar.lgxerxes.cloud`)"
-      - "traefik.http.services.<sailing-polar>.loadbalancer.server.port=8888"
+      - "traefik.http.routers.sailing-polar.entrypoints=websecure"
+      - "traefik.http.routers.sailing-polar.tls.certResolver=letsencrypt"
+      - "traefik.http.routers.sailing-polar.rule=Host(`sailingpolar.lgxerxes.cloud`)"
+      - "traefik.http.services.sailing-polar.loadbalancer.server.port=8888"
 
+    # to work with dokploy
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true

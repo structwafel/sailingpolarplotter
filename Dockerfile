@@ -1,6 +1,11 @@
-FROM python:3.11
+FROM python:3.11-alpine
 
 WORKDIR /code
+
+
+RUN apk update && apk add --no-cache gcc musl-dev linux-headers
+RUN apk add --no-cache python3
+RUN python3 -m ensurepip
 
 COPY requirements.txt /code/requirements.txt
 

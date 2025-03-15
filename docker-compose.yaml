@@ -5,15 +5,14 @@ services:
     ports:
       - "8888:8888"
     # environment:
-      # - PYTHONUNBUFFERED=1
-      # - TESTENV=1
+    # - PYTHONUNBUFFERED=1
+    # - TESTENV=1
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sailing-polar.entrypoints=websecure"
       - "traefik.http.routers.sailing-polar.tls.certResolver=letsencrypt"
       - "traefik.http.routers.sailing-polar.rule=Host(`sailingpolar.lgxerxes.cloud`)"
       - "traefik.http.services.sailing-polar.loadbalancer.server.port=8888"
-  
       # HTTP router
       - "traefik.http.routers.sailing-polar-http.entrypoints=web"
       - "traefik.http.routers.sailing-polar-http.rule=Host(`sailingpolar.lgxerxes.cloud`)"
@@ -22,7 +21,6 @@ services:
     # to work with dokploy
     networks:
       - dokploy-network
-
 networks:
   dokploy-network:
     external: true

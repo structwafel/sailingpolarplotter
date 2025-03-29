@@ -22,6 +22,7 @@
             pythonPackages.pandas
             pythonPackages.pydantic
           ];
+
           # Add shellHook to define the dev function
           shellHook = ''
             # Define the dev function to start the server

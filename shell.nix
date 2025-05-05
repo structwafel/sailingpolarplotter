@@ -12,17 +12,14 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    # Define the dev function to start the server
-    function dev() {
-      echo "Starting development server with live reloading..."
-      uvicorn app.main:app --reload --host 0.0.0.0 --port 8888
-    }
-
-    # Make the function available in the shell
-    export -f dev
-
-    # Show instructions
     echo "Sailing Polar Plotter development environment"
-    echo "Type 'dev' to start the development server"
+    echo "Run 'uvicorn app.main:app --reload' to start the development server"
+
+    echo "starting automatically"
+
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 8888
+
+    echo "quitting nix-shell"
+    exit
   '';
 }
